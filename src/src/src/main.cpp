@@ -7,9 +7,12 @@ using namespace geode::prelude;
 static bool on(char const* key) { return Mod::get()->getSavedValue<bool>(key, false); }
 static float speed() { return Mod::get()->getSavedValue<float>("speed", 1.f); }
 
-class ModMenuPopup : public Popup<> {
+class ModMenuPopup : public Popup {
 protected:
-    bool setup() override {
+    CCLabelBMFont* m_label = nullptr;
+
+    bool init() {
+        if (!Popup::init(260.f, 190.f)) return false;
         this->setTitle("Mod Menu");
         auto sz = m_mainLayer->getContentSize();
 
@@ -50,7 +53,7 @@ protected:
 
     void onToggle(CCObject* s) {
         auto t = static_cast<CCMenuItemToggler*>(s);
-        Mod::get()->setSavedValue<bool>(t->getID(), !t->isToggled());
+        Mod::get()->setSavedValue<bool>(std::string(t->getID()), !t->isToggled());
     }
 
     void onSpeed(CCObject* s) {
@@ -63,12 +66,10 @@ protected:
         m_label->setString(fmt::format("Viteza: {:.2f}x", speed()).c_str());
     }
 
-    CCLabelBMFont* m_label = nullptr;
-
 public:
     static ModMenuPopup* create() {
         auto ret = new ModMenuPopup();
-        if (ret->initAnchored(260.f, 190.f)) {
+        if (ret->init()) {
             ret->autorelease();
             return ret;
         }
@@ -92,11 +93,11 @@ class $modify(MyMenuLayer, MenuLayer) {
 };
 
 class $modify(MyPlayLayer, PlayLayer) {
-    void destroyPlayer(PlayerObject* p, GameObject* g) override {
+    void destroyPlayer(PlayerObject* p, GameObject* g) {
         if (on("noclip")) return;
         PlayLayer::destroyPlayer(p, g);
     }
-    void update(float dt) override {
+    void update(float dt) {
         PlayLayer::update(on("speedhack") ? dt * speed() : dt);
     }
 };
